@@ -16,14 +16,23 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
   const [transStatus, setTransStatus] = useState<TransStatus>('Todos');
   const itemsPerPage = 25;
 
-  // Filtragem local conforme regra: Coluna Q (pendentes)
+  // Filtragem local conforme regra: Coluna Q (pendentes) + Ordenação por BASE (A -> Z)
   const finalFilteredData = useMemo(() => {
-    if (transStatus === 'Todos') return data;
-    return data.filter(row => {
-      if (transStatus === 'Completo') return row.pendentes === 0;
-      if (transStatus === 'Incompleto') return row.pendentes > 0;
-      return true;
-    });
+    let filtered = data;
+    
+    // Aplicar filtro de status
+    if (transStatus !== 'Todos') {
+      filtered = data.filter(row => {
+        if (transStatus === 'Completo') return row.pendentes === 0;
+        if (transStatus === 'Incompleto') return row.pendentes > 0;
+        return true;
+      });
+    }
+
+    // Ordenar automaticamente por BASE (Crescente A -> Z)
+    return [...filtered].sort((a, b) => 
+      a.base.localeCompare(b.base, 'pt-BR', { numeric: true, sensitivity: 'base' })
+    );
   }, [data, transStatus]);
 
   // Resumo consolidado baseado nos dados da tabela (finalFilteredData)
