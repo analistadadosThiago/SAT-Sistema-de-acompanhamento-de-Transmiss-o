@@ -1,0 +1,5 @@
+{
+  "name": "SAT – Sistema de Acompanhamento de Transmissão",
+  "description": "Dashboard operacional para acompanhamento de leituras de transmissão com integração ao Google Planilhas.",
+  "requestFramePermissions": []
+}
