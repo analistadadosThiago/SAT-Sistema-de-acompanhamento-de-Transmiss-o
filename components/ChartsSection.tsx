@@ -9,7 +9,7 @@ interface ChartsSectionProps {
 }
 
 const ChartsSection: React.FC<ChartsSectionProps> = ({ data, isDarkMode }) => {
-  const [groupBy, setGroupBy] = useState<'razao' | 'base' | 'matricula'>('razao');
+  const [groupBy, setGroupBy] = useState<'razao' | 'base' | 'leiturista'>('razao');
 
   const chartData = useMemo(() => {
     const aggMap = new Map<string, { name: string; realizadas: number; pendentes: number }>();
@@ -18,7 +18,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data, isDarkMode }) => {
       let key = '';
       if (groupBy === 'razao') key = item.razao;
       else if (groupBy === 'base') key = item.base;
-      else if (groupBy === 'matricula') key = item.matricula;
+      else if (groupBy === 'leiturista') key = item.leiturista;
       
       if (!key) return;
       const current = aggMap.get(key) || { name: key, realizadas: 0, pendentes: 0 };
@@ -28,12 +28,10 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data, isDarkMode }) => {
     });
 
     return Array.from(aggMap.values())
-      // Ordenação crescente (A -> Z) pelo nome do grupo
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { numeric: true }))
       .slice(0, 50); 
   }, [data, groupBy]);
 
-  // Cores dinâmicas para os eixos do Recharts baseadas no estado isDarkMode
   const axisColor = isDarkMode ? '#94a3b8' : '#64748b';
   const gridColor = isDarkMode ? '#334155' : '#f1f5f9';
   const tooltipBg = isDarkMode ? '#1e293b' : '#ffffff';
@@ -45,7 +43,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data, isDarkMode }) => {
         <div>
           <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">Gráfico Comparativo</h3>
           <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
-            Análise de Leituras realizadas/não-realizadas – por Razão, Base Operativa e Matrícula
+            Análise de Leituras realizadas/não-realizadas – por Razão, Base Operativa e Leiturista
           </p>
         </div>
         
@@ -65,10 +63,10 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data, isDarkMode }) => {
               BASE
             </button>
             <button 
-              onClick={() => setGroupBy('matricula')}
-              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${groupBy === 'matricula' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              onClick={() => setGroupBy('leiturista')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${groupBy === 'leiturista' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
-              MATRÍCULA
+              LEITURISTA
             </button>
           </div>
         </div>

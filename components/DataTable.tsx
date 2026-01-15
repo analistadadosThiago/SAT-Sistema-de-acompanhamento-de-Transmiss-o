@@ -7,47 +7,35 @@ import 'jspdf-autotable';
 
 interface DataTableProps {
   data: TransmissionData[];
+  finalFilteredData: TransmissionData[];
+  transStatus: 'Todos' | 'Completo' | 'Incompleto';
+  setTransStatus: (status: 'Todos' | 'Completo' | 'Incompleto') => void;
 }
 
-type TransStatus = 'Todos' | 'Completo' | 'Incompleto';
-
-const DataTable: React.FC<DataTableProps> = ({ data }) => {
+const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transStatus, setTransStatus }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [transStatus, setTransStatus] = useState<TransStatus>('Todos');
-  const itemsPerPage = 25;
+  const itemsPerPage = 20;
 
-  // Filtragem local conforme regra: Coluna Q (pendentes) + Ordenação por BASE (A -> Z)
-  const finalFilteredData = useMemo(() => {
-    let filtered = data;
-    
-    // Aplicar filtro de status
-    if (transStatus !== 'Todos') {
-      filtered = data.filter(row => {
-        if (transStatus === 'Completo') return row.pendentes === 0;
-        if (transStatus === 'Incompleto') return row.pendentes > 0;
-        return true;
-      });
-    }
-
-    // Ordenar automaticamente por BASE (Crescente A -> Z)
-    return [...filtered].sort((a, b) => 
+  // Ordenação por BASE (A -> Z)
+  const sortedData = useMemo(() => {
+    return [...finalFilteredData].sort((a, b) => 
       a.base.localeCompare(b.base, 'pt-BR', { numeric: true, sensitivity: 'base' })
     );
-  }, [data, transStatus]);
+  }, [finalFilteredData]);
 
   // Resumo consolidado baseado nos dados da tabela (finalFilteredData)
   const summary = useMemo(() => {
-    const totalRealizadas = finalFilteredData.reduce((acc, curr) => acc + curr.realizadas, 0);
-    const totalPendentes = finalFilteredData.reduce((acc, curr) => acc + curr.pendentes, 0);
-    const totalARealizar = finalFilteredData.reduce((acc, curr) => acc + curr.aRealizar, 0);
+    const totalRealizadas = sortedData.reduce((acc, curr) => acc + curr.realizadas, 0);
+    const totalPendentes = sortedData.reduce((acc, curr) => acc + curr.pendentes, 0);
+    const totalARealizar = sortedData.reduce((acc, curr) => acc + curr.aRealizar, 0);
     const percPendenteTotal = totalARealizar > 0 ? (totalPendentes / totalARealizar) * 100 : 0;
 
     return { totalRealizadas, totalPendentes, percPendenteTotal };
-  }, [finalFilteredData]);
+  }, [sortedData]);
 
-  const totalPages = Math.ceil(finalFilteredData.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
 
-  const paginatedData = finalFilteredData.slice(
+  const paginatedData = sortedData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -62,7 +50,7 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
   };
 
   const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(finalFilteredData.map(r => ({
+    const ws = XLSX.utils.json_to_sheet(sortedData.map(r => ({
       'BASE': r.base,
       'UL': r.ul,
       'LEITURAS A REALIZAR': r.aRealizar,
@@ -79,7 +67,7 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
 
   const exportToPDF = () => {
     const doc = new jsPDF('landscape');
-    const tableData = finalFilteredData.map(r => [
+    const tableData = sortedData.map(r => [
       r.base, 
       r.ul, 
       r.aRealizar, 
@@ -116,14 +104,13 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
           <h2 className="font-black uppercase text-[11px] tracking-widest dark:text-slate-300">Análise de Quantidade de Leituras</h2>
         </div>
 
-        {/* FILTRO - SELECIONE O STATUS DE TRANSMISSÃO */}
         <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Selecione o Status de transmissão:</label>
           <select 
             className="bg-transparent text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider focus:outline-none cursor-pointer"
             value={transStatus}
             onChange={(e) => {
-              setTransStatus(e.target.value as TransStatus);
+              setTransStatus(e.target.value as any);
               setCurrentPage(1);
             }}
           >
@@ -134,7 +121,6 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* RESUMO CONSOLIDADO ACIMA DA TABELA */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-xl flex flex-col items-center transition-colors">
           <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Leituras Realizadas</span>
@@ -218,14 +204,13 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
 
         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            Página {currentPage} de {totalPages || 1} — {finalFilteredData.length} registros encontrados
+            Página {currentPage} de {totalPages || 1} — {sortedData.length} registros encontrados
           </p>
           <div className="flex gap-2">
             <button 
               disabled={currentPage === 1}
               onClick={() => {
                  setCurrentPage(p => p - 1);
-                 window.scrollTo({ top: 400, behavior: 'smooth' });
               }}
               className="p-2 w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
             >
@@ -235,7 +220,6 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
               disabled={currentPage === totalPages || totalPages === 0}
               onClick={() => {
                 setCurrentPage(p => p + 1);
-                window.scrollTo({ top: 400, behavior: 'smooth' });
               }}
               className="p-2 w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
             >

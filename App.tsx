@@ -5,8 +5,10 @@ import { TransmissionData, FiltersState, DashboardStats } from './types';
 import StatsCards from './components/StatsCards';
 import ChartsSection from './components/ChartsSection';
 import DataTable from './components/DataTable';
+import RankingSection from './components/RankingSection';
 
 type ThemeType = 'claro' | 'escuro';
+type TransStatus = 'Todos' | 'Completo' | 'Incompleto';
 
 const MultiSelect: React.FC<{
   label: string;
@@ -15,8 +17,10 @@ const MultiSelect: React.FC<{
   onChange: (values: string[]) => void;
   placeholder: string;
   required?: boolean;
-}> = ({ label, options, selected, onChange, placeholder, required }) => {
+  searchable?: boolean;
+}> = ({ label, options, selected, onChange, placeholder, required, searchable }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +42,11 @@ const MultiSelect: React.FC<{
 
   const selectAll = () => onChange([...options]);
   const clearAll = () => onChange([]);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [options, searchTerm]);
 
   return (
     <div className="space-y-2 relative" ref={containerRef}>
@@ -73,24 +82,47 @@ const MultiSelect: React.FC<{
       </div>
 
       {isOpen && (
-        <div className="absolute z-[60] mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-2 max-h-64 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-2 px-2">
+        <div className="absolute z-[60] mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-2 max-h-72 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          {searchable && (
+            <div className="p-2 border-b border-slate-100 dark:border-slate-700 mb-1">
+              <div className="relative">
+                <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400"></i>
+                <input
+                  type="text"
+                  placeholder="Pesquisar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-8 pr-3 text-[11px] font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-2 px-2 shrink-0 pt-1">
             <button onClick={selectAll} className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:underline">Selecionar Tudo</button>
             <button onClick={clearAll} className="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest hover:underline">Limpar</button>
           </div>
-          <div className="space-y-1">
-            {options.map(option => (
-              <div 
-                key={option} 
-                onClick={() => toggleOption(option)}
-                className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors group"
-              >
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(option) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 dark:border-slate-600 group-hover:border-blue-400'}`}>
-                  {selected.includes(option) && <i className="fa-solid fa-check text-[10px] text-white"></i>}
+
+          <div className="overflow-y-auto flex-1 space-y-1 max-h-52">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map(option => (
+                <div 
+                  key={option} 
+                  onClick={() => toggleOption(option)}
+                  className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors group"
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(option) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 dark:border-slate-600 group-hover:border-blue-400'}`}>
+                    {selected.includes(option) && <i className="fa-solid fa-check text-[10px] text-white"></i>}
+                  </div>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">{option}</span>
                 </div>
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">{option}</span>
+              ))
+            ) : (
+              <div className="px-3 py-4 text-center">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">Nenhum resultado</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -103,27 +135,24 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Implementação de controle de estado de tema real (claro/escuro)
   const [theme, setTheme] = useState<ThemeType>(() => {
     const saved = localStorage.getItem('sat-theme');
     return (saved === 'escuro' || saved === 'dark') ? 'escuro' : 'claro';
   });
 
   const [options, setOptions] = useState<any>({
-    meses: [], anos: [], bases: [], cidades: [], razoes: [], tipos: [], matriculas: []
+    meses: [], anos: [], bases: [], cidades: [], razoes: [], tipos: [], leituristas: []
   });
 
-  const [tempFilters, setTempFilters] = useState<FiltersState>({
-    mes: [], ano: [], base: [], cidade: [], razao: [], tipo: [], matricula: [],
-  });
+  const initialFilters: FiltersState = {
+    mes: [], ano: [], base: [], cidade: [], razao: [], tipo: [], leiturista: [],
+  };
 
-  const [appliedFilters, setAppliedFilters] = useState<FiltersState>({
-    mes: [], ano: [], base: [], cidade: [], razao: [], tipo: [], matricula: [],
-  });
-
+  const [tempFilters, setTempFilters] = useState<FiltersState>(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState<FiltersState>(initialFilters);
+  const [transStatus, setTransStatus] = useState<TransStatus>('Todos');
   const [hasGenerated, setHasGenerated] = useState(false);
 
-  // Efeito fundamental para alternar o tema no DOM e persistir
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'escuro') {
@@ -135,7 +164,6 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  // Função de Toggle Automática
   const toggleTheme = () => {
     setTheme(prev => prev === 'claro' ? 'escuro' : 'claro');
   };
@@ -149,7 +177,7 @@ const App: React.FC = () => {
         setOptions(extracted);
         setLoading(false);
       } catch (err) {
-        setError('Erro ao carregar a aba oficial "Matricula". Verifique a conexão com a planilha.');
+        setError('Erro ao carregar a aba oficial "Nome_Matricula". Verifique a conexão com a planilha.');
         setLoading(false);
       }
     };
@@ -170,11 +198,12 @@ const App: React.FC = () => {
     setHasGenerated(true);
   };
 
-  useEffect(() => {
-    if (hasGenerated && isFormValid) {
-      setAppliedFilters({ ...tempFilters });
-    }
-  }, [tempFilters, hasGenerated, isFormValid]);
+  const handleResetFilters = () => {
+    setTempFilters(initialFilters);
+    setAppliedFilters(initialFilters);
+    setHasGenerated(false);
+    setTransStatus('Todos');
+  };
 
   const filteredData = useMemo(() => {
     if (!hasGenerated) return [];
@@ -185,11 +214,23 @@ const App: React.FC = () => {
       const matchBase = appliedFilters.base.length === 0 || appliedFilters.base.includes(item.base);
       const matchRazao = appliedFilters.razao.length === 0 || appliedFilters.razao.includes(item.razao);
       const matchTipo = appliedFilters.tipo.length === 0 || appliedFilters.tipo.includes(item.tipo);
-      const matchMatricula = appliedFilters.matricula.length === 0 || appliedFilters.matricula.includes(item.matricula);
+      const matchLeiturista = appliedFilters.leiturista.length === 0 || appliedFilters.leiturista.includes(item.leiturista);
 
-      return matchMes && matchAno && matchBase && matchRazao && matchTipo && matchMatricula;
+      return matchMes && matchAno && matchBase && matchRazao && matchTipo && matchLeiturista;
     });
   }, [allData, appliedFilters, hasGenerated]);
+
+  const finalFilteredData = useMemo(() => {
+    let filtered = filteredData;
+    if (transStatus !== 'Todos') {
+      filtered = filteredData.filter(row => {
+        if (transStatus === 'Completo') return row.pendentes === 0;
+        if (transStatus === 'Incompleto') return row.pendentes > 0;
+        return true;
+      });
+    }
+    return filtered;
+  }, [filteredData, transStatus]);
 
   const stats = useMemo<DashboardStats>(() => {
     const aRealizarSum = filteredData.reduce((acc, curr) => acc + curr.aRealizar, 0);
@@ -211,7 +252,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4 text-center px-4">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sincronizando com a aba oficial "Matricula"...</p>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sincronizando com a aba oficial "Nome_Matricula"...</p>
         </div>
       </div>
     );
@@ -263,21 +304,29 @@ const App: React.FC = () => {
               <i className="fa-solid fa-filter text-blue-600"></i>
               <h2 className="font-black uppercase text-[11px] tracking-widest text-slate-800 dark:text-slate-200">Selecione os filtros a serem tratados</h2>
             </div>
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
               <button 
-                onClick={handleGenerate}
-                disabled={!isFormValid}
-                className={`w-full sm:w-auto px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
-                  isFormValid 
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none'
-                }`}
+                onClick={handleResetFilters}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-2 shadow-sm"
               >
-                <i className="fa-solid fa-play"></i> Gerar
+                <i className="fa-solid fa-rotate-left"></i> Nova Pesquisa
               </button>
-              {!isFormValid && (
-                <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter mt-1">Selecione Mês e Ano</span>
-              )}
+              <div className="flex flex-col items-end w-full sm:w-auto">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={!isFormValid}
+                  className={`w-full sm:w-auto px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
+                    isFormValid 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20' 
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none border border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <i className="fa-solid fa-play"></i> Gerar
+                </button>
+                {!isFormValid && (
+                  <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter mt-1">Selecione Mês e Ano</span>
+                )}
+              </div>
             </div>
           </div>
           
@@ -325,11 +374,12 @@ const App: React.FC = () => {
             />
 
             <MultiSelect 
-              label="Selecione Matrícula:"
-              options={options.matriculas}
-              selected={tempFilters.matricula}
-              onChange={(v) => handleFilterChange('matricula', v)}
-              placeholder="Todas as Matrículas..."
+              label="Selecione o Leiturista:"
+              options={options.leituristas}
+              selected={tempFilters.leiturista}
+              onChange={(v) => handleFilterChange('leiturista', v)}
+              placeholder="Todos os Leituristas..."
+              searchable
             />
           </div>
         </section>
@@ -339,7 +389,7 @@ const App: React.FC = () => {
             <div className="bg-slate-50 dark:bg-slate-800 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 border border-slate-100 dark:border-slate-700 shadow-inner">
               <i className="fa-solid fa-play text-4xl text-blue-200 dark:text-blue-500/30"></i>
             </div>
-            <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight uppercase">Dashboard SAT – Aba Matricula</h3>
+            <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight uppercase">Dashboard SAT – Aba Nome_Matricula</h3>
             <p className="text-slate-400 dark:text-slate-500 max-w-sm mx-auto text-sm font-medium leading-relaxed">
               Selecione o <strong>Mês</strong> e o <strong>Ano</strong> (obrigatórios) para carregar os dados consolidados da aba oficial.
             </p>
@@ -348,14 +398,20 @@ const App: React.FC = () => {
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <StatsCards stats={stats} />
             <ChartsSection data={filteredData} isDarkMode={theme === 'escuro'} />
-            <DataTable data={filteredData} />
+            <DataTable 
+              data={filteredData} 
+              finalFilteredData={finalFilteredData} 
+              transStatus={transStatus} 
+              setTransStatus={setTransStatus} 
+            />
+            <RankingSection data={finalFilteredData} isDarkMode={theme === 'escuro'} />
           </div>
         )}
       </main>
 
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 pb-12 text-center">
         <p className="text-slate-400 dark:text-slate-600 text-[9px] font-black uppercase tracking-[0.3em]">
-          SAT – SISTEMA DE ACOMPANHAMENTO DE TRANSMISSÃO | FONTE: ABA MATRICULA | 2024
+          SAT – SISTEMA DE ACOMPANHAMENTO DE TRANSMISSÃO | FONTE: ABA NOME_MATRICULA | 2024
         </p>
       </footer>
     </div>
