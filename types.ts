@@ -6,9 +6,12 @@ export interface TransmissionData {
   cidade: string;
   razao: string;
   tipo: string;
+  matricula: string;
   aRealizar: number;
   realizadas: number;
   pendentes: number;
+  leituras100: number;
+  leituras30: number;
   ul: string;
   id?: string;
 }
@@ -20,6 +23,7 @@ export interface FiltersState {
   cidade: string[];
   razao: string[];
   tipo: string[];
+  matricula: string[];
 }
 
 export interface DashboardStats {

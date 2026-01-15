@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SAT – Sistema de Acompanhamento de Transmissão</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Configuração essencial para que o Tailwind reconheça a classe 'dark' no elemento HTML
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {}
+        }
+      }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script type="importmap">
     {
@@ -23,7 +32,7 @@
     }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans">
+  <body class="bg-slate-50 text-slate-900 font-sans dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
     <div id="root"></div>
   </body>
 </html>

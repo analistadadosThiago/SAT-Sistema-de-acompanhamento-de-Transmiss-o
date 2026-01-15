@@ -38,13 +38,13 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {cards.map((card, index) => (
-        <div key={index} className="bg-white rounded-xl shadow-sm p-5 flex items-center border border-slate-200">
-          <div className={`${card.color} w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg mr-4`}>
+        <div key={index} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-5 flex items-center border border-slate-200 dark:border-slate-800 transition-colors">
+          <div className={`${card.color} w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg mr-4 shadow-lg`}>
             <i className={`fa-solid ${card.icon}`}></i>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{card.title}</p>
-            <p className="text-xl font-black text-slate-800 tracking-tight">{card.value}</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{card.title}</p>
+            <p className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{card.value}</p>
           </div>
         </div>
       ))}
