@@ -53,12 +53,13 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
     const ws = XLSX.utils.json_to_sheet(sortedData.map(r => ({
       'BASE': r.base,
       'UL': r.ul,
-      'LEITURAS A REALIZAR': r.aRealizar,
-      'LEITURAS REALIZADAS': r.realizadas,
-      'LEITURAS Ñ REALIZADAS': r.pendentes,
-      'LEITURAS 100%': r.leituras100,
-      'LEITURAS 30%': r.leituras30,
-      '% PENDENTE': formatPercent(calculateRowPercent(r))
+      'LEIT.': r.leiturista,
+      'L. A REALIZAR': r.aRealizar,
+      'L. REALIZADA': r.realizadas,
+      'L. Ñ-REALIZADA': r.pendentes,
+      'L. 100%': r.leituras100,
+      'L. 30%': r.leituras30,
+      '%': formatPercent(calculateRowPercent(r))
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Relatório SAT");
@@ -70,6 +71,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
     const tableData = sortedData.map(r => [
       r.base, 
       r.ul, 
+      r.leiturista,
       r.aRealizar, 
       r.realizadas, 
       r.pendentes, 
@@ -79,18 +81,18 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
     ]);
 
     (doc as any).autoTable({
-      head: [['BASE', 'UL', 'LEITURAS A REALIZAR', 'LEITURAS REALIZADAS', 'LEITURAS Ñ REALIZADAS', 'LEITURAS 100%', 'LEITURAS 30%', '% PENDENTE']],
+      head: [['BASE', 'UL', 'LEIT.', 'L. A REALIZAR', 'L. REALIZADA', 'L. Ñ-REALIZADA', 'L. 100%', 'L. 30%', '%']],
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: [15, 23, 42], fontSize: 8, fontStyle: 'bold' },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
-        2: { halign: 'center' },
         3: { halign: 'center' },
         4: { halign: 'center' },
         5: { halign: 'center' },
         6: { halign: 'center' },
-        7: { halign: 'right' }
+        7: { halign: 'center' },
+        8: { halign: 'right' }
       }
     });
     doc.save("relatorio_sat.pdf");
@@ -102,22 +104,6 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
         <div className="flex items-center gap-2 text-slate-500">
           <i className="fa-solid fa-list-check text-blue-600"></i>
           <h2 className="font-black uppercase text-[11px] tracking-widest dark:text-slate-300">Análise de Quantidade de Leituras</h2>
-        </div>
-
-        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-          <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Selecione o Status de transmissão:</label>
-          <select 
-            className="bg-transparent text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider focus:outline-none cursor-pointer"
-            value={transStatus}
-            onChange={(e) => {
-              setTransStatus(e.target.value as any);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="Todos">Exibir Todos</option>
-            <option value="Completo">Completo</option>
-            <option value="Incompleto">Incompleto</option>
-          </select>
         </div>
       </div>
 
@@ -138,10 +124,29 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Relação por Base/Razão</h3>
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acompanhamento detalhado das transmissões</p>
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div>
+              <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Relação por Base/Razão</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acompanhamento detalhado das transmissões</p>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+              <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest whitespace-nowrap">Selecione o Status de transmissão:</label>
+              <select 
+                className="bg-transparent text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider focus:outline-none cursor-pointer"
+                value={transStatus}
+                onChange={(e) => {
+                  setTransStatus(e.target.value as any);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="Todos">Exibir Todos</option>
+                <option value="Completo">Completo</option>
+                <option value="Incompleto">Incompleto</option>
+              </select>
+            </div>
           </div>
+          
           <div className="flex gap-2">
             <button onClick={exportToExcel} className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 transition-all">
               <i className="fa-solid fa-file-excel"></i> Exportar Excel
@@ -159,12 +164,13 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
                 {[
                   'BASE', 
                   'UL', 
-                  'LEITURAS A REALIZAR', 
-                  'LEITURAS REALIZADAS',
-                  'LEITURAS Ñ REALIZADAS',
-                  'LEITURAS 100%',
-                  'LEITURAS 30%',
-                  '% PENDENTE'
+                  'Leit.',
+                  'L. A REALIZAR', 
+                  'L. REALIZADA',
+                  'L. Ñ-REALIZADA',
+                  'L. 100%',
+                  'L. 30%',
+                  '%'
                 ].map(h => (
                   <th key={h} className="px-4 py-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest whitespace-nowrap">{h}</th>
                 ))}
@@ -180,6 +186,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
                   >
                     <td className="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300">{row.base}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 font-mono">{row.ul}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 truncate max-w-[120px]">{row.leiturista}</td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-900 dark:text-slate-100">{row.aRealizar}</td>
                     <td className="px-4 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">{row.realizadas}</td>
                     <td className="px-4 py-3 text-xs font-bold text-amber-600 dark:text-amber-500">{row.pendentes}</td>
@@ -193,7 +200,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, finalFilteredData, transSta
               })}
               {paginatedData.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
+                  <td colSpan={9} className="px-4 py-12 text-center">
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">Nenhum registro encontrado para este status.</p>
                   </td>
                 </tr>
